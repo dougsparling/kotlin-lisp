@@ -11,20 +11,23 @@ Env    = dict             # A Scheme environment (defined below)
                           # is a mapping of {variable: value}
 */
 
-class SyntaxError(msg: String) : RuntimeException(msg)
+class SyntaxErr(msg: String) : RuntimeException(msg)
 
 //sealed interface Value
 
 sealed class Exp //: Value
-abstract class Atom : Exp()
+sealed class Atom : Exp()
 data class Symbol(val sym: String) : Atom()
 data class Num(val num: Number) : Atom()
-data class L(val list: List<Exp>): Exp()
+data class L(val list: List<Exp>): Exp() {
+    operator fun get(idx: Int): Exp = list[idx]
+    val size = list.size
+}
 
 fun listExp(vararg stuff: Exp) = L(stuff.toList())
 
 // TODO: built-in env type, maybe it should be above Exp?
-class Proc(val proc: (List<Exp>) -> Exp): Exp()
+class Proc(val proc: (L) -> Exp): Exp()
 
 fun parse(str: String): List<String> {
     return str.replace("(", " ( ").replace(")", " ) ").split(' ').filter { it.isNotBlank() }
@@ -49,7 +52,14 @@ private fun readFromTokens(tokens: ArrayDeque<String>): Exp {
     }
 }
 
-private fun syntaxError(msg: String): Nothing = throw SyntaxError(msg)
+private fun syntaxError(msg: String): Nothing = throw SyntaxErr(msg)
 
 private fun atom(token: String) =
     token.toIntOrNull()?.let { Num(it) } ?: token.toFloatOrNull()?.let { Num(it) } ?: Symbol(token)
+
+fun Exp.pp(): String = when (this) {
+    is L -> "(${list.joinToString(separator = " ", transform = Exp::pp)})"
+    is Num -> num.toString()
+    is Symbol -> sym
+    is Proc -> "Proc"
+}

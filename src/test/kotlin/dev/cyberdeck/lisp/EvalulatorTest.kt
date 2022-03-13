@@ -94,7 +94,7 @@ class Recorder(private val retVal: Exp = Num(0)) {
     val calls = mutableListOf<List<Exp>>()
 
     val exp = listExp(Proc { args ->
-        calls.add(args)
+        calls.add(args.list)
         retVal
     })
 

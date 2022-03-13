@@ -45,7 +45,7 @@ class ParserTest: StringSpec({
     }
 
     "readFromTokens fails if empty" {
-        shouldThrow<SyntaxError> {
+        shouldThrow<SyntaxErr> {
             readFromTokens(emptyList())
         }
     }
@@ -69,7 +69,7 @@ class ParserTest: StringSpec({
     }
 
     "readFromTokens fails on unmatched closing paren" {
-        shouldThrow<SyntaxError> {
+        shouldThrow<SyntaxErr> {
             readFromTokens(listOf(")"))
         }
     }

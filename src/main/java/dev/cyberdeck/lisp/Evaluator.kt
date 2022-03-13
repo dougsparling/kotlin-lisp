@@ -13,7 +13,7 @@ fun eval(x: Exp, env: Environment = env()): Exp {
         x is Proc -> x
         // resolve from definition
         x is Symbol -> {
-            env.dict[x] ?: evalErr("undefined symbol $x")
+            env.dict[x] ?: evalErr("undefined: ${x.sym}")
         }
         // (if x (conseq) (alt))
         x is L && x.list.size == 4 && x.list[0] == Symbol("if")  -> {
@@ -30,12 +30,12 @@ fun eval(x: Exp, env: Environment = env()): Exp {
             eval(exp, env).also { env.dict[sym as Symbol] = it }
         }
         // proc call
-        x is L -> {
+        x is L && x.list.isNotEmpty() -> {
             val proc = eval(x.list.first(), env) as? Proc ?: evalErr("expected proc")
-            val args = x.list.drop(1).map { eval(it, env) }
+            val args = L(x.list.drop(1).map { eval(it, env) })
             proc.proc(args)
         }
-        else -> evalErr("unexpected exp: $x")
+        else -> evalErr("unexpected exp: ${x.pp()}")
     }
 }
 
