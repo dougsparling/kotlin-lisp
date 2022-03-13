@@ -2,7 +2,7 @@ package dev.cyberdeck.lisp
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.matchers.maps.shouldContain
+import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.shouldBe
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.exhaustive
@@ -59,7 +59,51 @@ class EvalulatorTest: StringSpec({
         checkAll(symbols) { symbol ->
             val env = env()
             eval(listExp(Symbol("define"), Symbol(symbol), Num(1)), env)
-            env.dict.shouldContain(Symbol(symbol), Num(1))
+            env[Symbol(symbol)].shouldBe(Num(1))
+        }
+    }
+
+    "eval re-definition fails" {
+        checkAll(symbols) { symbol ->
+            val env = env(symbol to Num(1))
+
+            val recorder = Recorder()
+
+            shouldThrow<RuntimeErr> {
+                eval(listExp(Symbol("define"), Symbol(symbol), recorder.exp), env)
+            }
+
+            // definition unchanged
+            env[Symbol(symbol)].shouldBe(Num(1))
+
+            // expression wasn't evaluated (TODO is this desireable?)
+            recorder.wasCalled().shouldBeFalse()
+        }
+    }
+
+    "eval set! sets previously defined value" {
+        checkAll(symbols) { symbol ->
+            val env = env(symbol to Num(1))
+            eval(listExp(Symbol("set!"), Symbol(symbol), Num(2)), env)
+            env[Symbol(symbol)].shouldBe(Num(2))
+        }
+    }
+
+    "eval set! sets value in correct scope" {
+        checkAll(symbols) { symbol ->
+            val top = env(symbol to Num(1))
+            val bottom = top.newInner().newInner()
+            eval(listExp(Symbol("set!"), Symbol(symbol), Num(2)), top)
+            top[symbol].shouldBe(Num(2))
+            bottom[symbol].shouldBe(Num(2))
+        }
+    }
+
+    "eval quote returns literal exp" {
+        checkAll(symbols) { symbol ->
+            val env = env()
+            val res = eval(listExp(Symbol("quote"), listExp(Symbol(symbol), Num(1), Num(2))), env)
+            res.shouldBe(listExp(Symbol(symbol), Num(1), Num(2)))
         }
     }
 
