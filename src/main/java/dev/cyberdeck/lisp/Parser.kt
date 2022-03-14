@@ -44,7 +44,7 @@ private fun readFromTokens(tokens: ArrayDeque<String>): Exp {
             val mutL = mutableListOf<Exp>()
             while (tokens.first() != ")") {
                 mutL += readFromTokens(tokens)
-                if(tokens.isEmpty()) syntaxError("expected ) but hit EOF")
+                if (tokens.isEmpty()) syntaxError("expected ) but hit EOF")
             }
             tokens.removeFirst() // pop ")"
             L(mutL)
@@ -56,7 +56,7 @@ private fun readFromTokens(tokens: ArrayDeque<String>): Exp {
 
 private fun syntaxError(msg: String): Nothing = throw SyntaxErr(msg)
 
-private fun atom(token: String) = when(token) {
+private fun atom(token: String) = when (token) {
     "true" -> Bool(true)
     "false" -> Bool(false)
     else -> token.toIntOrNull()?.let { Num(it) } ?: token.toFloatOrNull()?.let { Num(it) } ?: Symbol(token)

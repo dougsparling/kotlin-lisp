@@ -6,21 +6,7 @@ fun main(vararg arg: String) {
     while (true) {
         print("> ")
         val line = reader.readLine()
-        if(line.equals("quit") || line.equals("exit")) return
-        val parsed = parse(line)
-        try {
-            val exp = readFromTokens(parsed)
-            val result = eval(exp, env)
-            if(result != Nil) {
-                println(result.pp())
-            }
-        } catch (e: SyntaxErr) {
-            println("syntax error: ${e.message}")
-            if(env["debug"]?.let { it is Bool && it.bool } == true) {
-                println("tokens: $parsed")
-            }
-        } catch (e: RuntimeErr) {
-            println("error: ${e.message}")
-        }
+        if (line == null || line.equals("quit") || line.equals("exit")) return
+        runWithEnv(env, line)
     }
 }

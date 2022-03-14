@@ -18,7 +18,7 @@ fun eval(x: Exp, env: Environment = env()): Exp {
         }
 
         // (if x (conseq) (alt))
-        x is L && x.list.size == 4 && x.list[0] == Symbol("if")  -> {
+        x is L && x.list.size == 4 && x.list[0] == Symbol("if") -> {
             val (_, test, conseq, alt) = x.list
             if (truthy(eval(test, env))) {
                 eval(conseq, env)
@@ -29,7 +29,7 @@ fun eval(x: Exp, env: Environment = env()): Exp {
 
         // (quote (exp))
         x is L && x[0] == Symbol("quote") -> {
-            if(x.size != 2) evalErr("quote can only be applied to list, but was ${x.pp()}")
+            if (x.size != 2) evalErr("quote can only be applied to list, but was ${x.pp()}")
             x[1]
         }
 
@@ -37,7 +37,7 @@ fun eval(x: Exp, env: Environment = env()): Exp {
         x is L && x.size == 3 && x[0] == Symbol("define") -> {
             val (_, sym, exp) = x.list
             sym as? Symbol ?: evalErr("expected define symbol but was ${sym.pp()}")
-            if(env[sym] != null) evalErr("${sym.pp()} already defined")
+            if (env[sym] != null) evalErr("${sym.pp()} already defined")
             eval(exp, env).also { env[sym] = it }
         }
 
@@ -47,11 +47,12 @@ fun eval(x: Exp, env: Environment = env()): Exp {
             val paramList = x[1] as? L ?: evalErr("lambda parameter names must be in sub-list, but got ${x[1].pp()}")
 
             val params = paramList.list.map {
-                (it as? Symbol) ?: evalErr("lambda parameters must be symbols, but were: ${paramList.list.map { p -> p.pp() }}")
+                (it as? Symbol)
+                    ?: evalErr("lambda parameters must be symbols, but were: ${paramList.list.map { p -> p.pp() }}")
             }
 
             Proc { args ->
-                if(args.size != paramList.size) evalErr("lambda of arity ${args.size} invoked with ${paramList.size} arguments")
+                if (args.size != paramList.size) evalErr("lambda of arity ${args.size} invoked with ${paramList.size} arguments")
 
                 // this is where the magic happens: bind the parameters passed to the lambda
                 // at the call site to the arguments named by the given symbols
@@ -64,7 +65,7 @@ fun eval(x: Exp, env: Environment = env()): Exp {
         x is L && x.size == 3 && x[0] == Symbol("set!") -> {
             val (_, sym, exp) = x.list
             sym as? Symbol ?: evalErr("expected set! symbol but was ${sym.pp()}")
-            if(env[sym] == null) evalErr("tried to set ${sym.pp()} but was not defined")
+            if (env[sym] == null) evalErr("tried to set ${sym.pp()} but was not defined")
             eval(exp, env).also { env.overwrite(sym, it) }
         }
 
