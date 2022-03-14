@@ -4,17 +4,18 @@ class RuntimeErr(msg: String) : RuntimeException(msg)
 
 fun evalErr(msg: String): Nothing = throw RuntimeErr(msg)
 
-
 fun eval(x: Exp, env: Environment = env()): Exp {
     return when {
-        // literal value
+        // literal values
         x is Num -> x
-        // TODO: proc is a hack for tests... but bare proc is normally not possible? or maybe that's what lambda will be in the future...
+        x is Bool -> x
         x is Proc -> x
+
         // resolve from definition
         x is Symbol -> {
             env[x] ?: evalErr("undefined: ${x.pp()}")
         }
+
         // (if x (conseq) (alt))
         x is L && x.list.size == 4 && x.list[0] == Symbol("if")  -> {
             val (_, test, conseq, alt) = x.list
@@ -24,8 +25,10 @@ fun eval(x: Exp, env: Environment = env()): Exp {
                 eval(alt, env)
             }
         }
+
         // (quote (exp))
         x is L && x.size == 2 && x[0] == Symbol("quote") -> x[1]
+
         // (define x (exp))
         x is L && x.size == 3 && x[0] == Symbol("define") -> {
             val (_, sym, exp) = x.list
@@ -33,6 +36,26 @@ fun eval(x: Exp, env: Environment = env()): Exp {
             if(env[sym] != null) evalErr("${sym.pp()} already defined")
             eval(exp, env).also { env[sym] = it }
         }
+
+        // (lambda (a, b, c...) (exp...)
+        x is L && x[0] == Symbol("lambda") && x.size == 3 -> {
+            val body = x[x.size - 1]
+            val paramList = x[1] as? L ?: evalErr("lambda parameter names must be in sub-list, but got ${x[1].pp()}")
+
+            val params = paramList.list.map {
+                (it as? Symbol) ?: evalErr("lambda parameters must be symbols, but were: ${paramList.list.map { p -> p.pp() }}")
+            }
+
+            Proc { args ->
+                if(args.size != paramList.size) evalErr("lambda of arity ${args.size} invoked with ${paramList.size} arguments")
+
+                // this is where the magic happens: bind the parameters passed to the lambda
+                // at the call site to the symbols
+                val binding = env.newInner(*params.zip(args.list).toTypedArray())
+                eval(body, binding)
+            }
+        }
+
         // (set! x (exp))
         x is L && x.size == 3 && x[0] == Symbol("set!") -> {
             val (_, sym, exp) = x.list
@@ -40,21 +63,19 @@ fun eval(x: Exp, env: Environment = env()): Exp {
             if(env[sym] == null) evalErr("tried to set ${sym.pp()} but was not defined")
             eval(exp, env).also { env.overwrite(sym, it) }
         }
+
         // proc call
         x is L && x.size > 0 -> {
             val proc = eval(x.list.first(), env) as? Proc ?: evalErr("expected proc")
             val args = L(x.list.drop(1).map { eval(it, env) })
             proc.proc(args)
         }
+
         else -> evalErr("unexpected exp: ${x.pp()}")
     }
 }
 
 fun truthy(exp: Exp) = when (exp) {
-    is Num -> when (exp.num) {
-        is Int -> exp.num != 0
-        is Float -> exp.num != 0.0f
-        else -> evalErr("not a truthy num: ${exp.num}")
-    }
-    else -> evalErr("not a truthy exp: $exp")
+    is Bool -> exp.bool
+    else -> evalErr("expected Bool, got ${exp.pp()}")
 }

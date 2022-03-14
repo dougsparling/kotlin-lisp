@@ -7,13 +7,16 @@ fun main(vararg arg: String) {
         print("> ")
         val line = reader.readLine()
         if(line.equals("quit")) return
+        val parsed = parse(line)
         try {
-            val parsed = parse(line)
             val exp = readFromTokens(parsed)
             val result = eval(exp, env)
             println(result.pp())
         } catch (e: SyntaxErr) {
             println("syntax error: ${e.message}")
+            if(env["debug"]?.let { it is Bool && it.bool } == true) {
+                println("tokens: $parsed")
+            }
         } catch (e: RuntimeErr) {
             println("error: ${e.message}")
         }

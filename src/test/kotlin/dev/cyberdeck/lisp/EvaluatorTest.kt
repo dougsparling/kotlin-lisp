@@ -4,14 +4,15 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.exhaustive
 import io.kotest.property.exhaustive.merge
 
-class EvalulatorTest: StringSpec({
+class EvaluatorTest: StringSpec({
     val symbols = listOf("abc", "x", "x1", " a", " b").exhaustive()
-    val truthy = listOf(Num(1), Num(-1), Num(-1.0f), Num(+1.0f)).exhaustive()
-    val falsey = listOf(Num(0), Num(0.0f)).exhaustive()
+    val truthy = listOf(Bool(true)).exhaustive()
+    val falsey = listOf(Bool(false)).exhaustive()
 
     "eval symbol gives value" {
         eval(Symbol("x"), env("x" to Num(42)))
@@ -99,6 +100,25 @@ class EvalulatorTest: StringSpec({
         }
     }
 
+    "eval lambda returns invocable proc" {
+        checkAll(symbols) { symbol ->
+            val res = eval(listExp(Symbol("lambda"), listExp(Symbol(symbol)), Num(123)))
+            val lambdaRes = res.shouldBeInstanceOf<Proc>().proc(listExp(Num(42)))
+            lambdaRes.shouldBe(Num(123))
+        }
+    }
+
+    "eval lambda parameter names shadow env" {
+        checkAll(symbols) { symbol ->
+            val outer = env(symbol to Num(1))
+
+            // identity function whose parameter names shadows definition in outer scope
+            val res = eval(listExp(Symbol("lambda"), listExp(Symbol(symbol)), Symbol(symbol)), outer.newInner())
+            val lambdaRes = res.shouldBeInstanceOf<Proc>().proc(listExp(Num(2)))
+            lambdaRes.shouldBe(Num(2))
+        }
+    }
+
     "eval quote returns literal exp" {
         checkAll(symbols) { symbol ->
             val env = env()
@@ -107,9 +127,9 @@ class EvalulatorTest: StringSpec({
         }
     }
 
-    "eval if fails unless truthy" {
+    "eval if fails unless boolean" {
         shouldThrow<RuntimeErr> {
-            eval(listExp(Symbol("if"), Symbol("wat"), Num(2), Num(3)))
+            eval(listExp(Symbol("if"), Num(1), Num(2), Num(3)))
         }
     }
 

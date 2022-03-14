@@ -44,6 +44,14 @@ class ParserTest: StringSpec({
         }
     }
 
+    "parse with unbalanced parens" {
+        checkAll(symbols) { s ->
+            shouldThrow<SyntaxErr> {
+                readFromTokens(parse("($s $s ($s ($s $s))")) // no closing paren
+            }
+        }
+    }
+
     "readFromTokens fails if empty" {
         shouldThrow<SyntaxErr> {
             readFromTokens(emptyList())
@@ -59,6 +67,12 @@ class ParserTest: StringSpec({
     "readFromTokens returns float" {
         checkAll<Float> { f ->
             readFromTokens(listOf(f.toString())).shouldBe(Num(f))
+        }
+    }
+
+    "readFromTokens returns boolean" {
+        checkAll<Boolean> { b ->
+            readFromTokens(listOf(b.toString())).shouldBe(Bool(b))
         }
     }
 

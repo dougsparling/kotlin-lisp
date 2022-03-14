@@ -19,7 +19,8 @@ sealed class Exp //: Value
 sealed class Atom : Exp()
 data class Symbol(val sym: String) : Atom()
 data class Num(val num: Number) : Atom()
-data class L(val list: List<Exp>): Exp() {
+data class Bool(val bool: Boolean) : Atom()
+data class L(val list: List<Exp>) : Exp() {
     operator fun get(idx: Int): Exp = list[idx]
     val size = list.size
 }
@@ -27,7 +28,7 @@ data class L(val list: List<Exp>): Exp() {
 fun listExp(vararg stuff: Exp) = L(stuff.toList())
 
 // TODO: built-in env type, maybe it should be above Exp?
-class Proc(val proc: (L) -> Exp): Exp()
+class Proc(val proc: (L) -> Exp) : Exp()
 
 fun parse(str: String): List<String> {
     return str.replace("(", " ( ").replace(")", " ) ").split(' ').filter { it.isNotBlank() }
@@ -41,10 +42,11 @@ private fun readFromTokens(tokens: ArrayDeque<String>): Exp {
     return when (val token = tokens.removeFirst()) {
         "(" -> {
             val mutL = mutableListOf<Exp>()
-            while(tokens.first() != ")") {
+            while (tokens.first() != ")") {
                 mutL += readFromTokens(tokens)
+                if(tokens.isEmpty()) syntaxError("expected ) but hit EOF")
             }
-            tokens.removeFirst() // pop )
+            tokens.removeFirst() // pop ")"
             L(mutL)
         }
         ")" -> syntaxError("unexpected )")
@@ -54,12 +56,16 @@ private fun readFromTokens(tokens: ArrayDeque<String>): Exp {
 
 private fun syntaxError(msg: String): Nothing = throw SyntaxErr(msg)
 
-private fun atom(token: String) =
-    token.toIntOrNull()?.let { Num(it) } ?: token.toFloatOrNull()?.let { Num(it) } ?: Symbol(token)
+private fun atom(token: String) = when(token) {
+    "true" -> Bool(true)
+    "false" -> Bool(false)
+    else -> token.toIntOrNull()?.let { Num(it) } ?: token.toFloatOrNull()?.let { Num(it) } ?: Symbol(token)
+}
 
 fun Exp.pp(): String = when (this) {
     is L -> "(${list.joinToString(separator = " ", transform = Exp::pp)})"
     is Num -> num.toString()
-    is Symbol -> sym
+    is Bool -> bool.toString()
+    is Symbol -> ":$sym"
     is Proc -> "Proc"
 }

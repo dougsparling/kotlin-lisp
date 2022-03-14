@@ -19,10 +19,10 @@ class EnvironmentTest : ShouldSpec({
 
         should("allow shadowing of outer symbols") {
             val outer = env("a" to Num(1))
-            val inner = outer.newInner()
+            val inner = outer.newInner(Symbol("a") to Num(2))
 
-            inner["a"] = Num(2)
-            inner["a"].shouldNotBeNull()
+            inner["a"].shouldBe(Num(2))
+            outer["a"].shouldBe(Num(1))
         }
     }
 

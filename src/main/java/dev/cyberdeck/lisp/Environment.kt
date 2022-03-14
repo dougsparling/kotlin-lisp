@@ -11,9 +11,9 @@ class Environment(
     }
 
     fun overwrite(sym: Symbol, value: Exp) {
-        if(dict.containsKey(sym)) {
+        if (dict.containsKey(sym)) {
             dict[sym] = value
-        } else if(outer != null) {
+        } else if (outer != null) {
             outer.overwrite(sym, value)
         } else {
             evalErr("couldn't find ${sym.pp()}")
@@ -24,7 +24,8 @@ class Environment(
     internal operator fun get(str: String) = get(Symbol(str))
     internal operator fun set(str: String, value: Exp) = set(Symbol(str), value)
 
-    fun newInner() = Environment(outer = this)
+    fun newInner(vararg bindings: Pair<Symbol, Exp>) =
+        Environment(outer = this, dict = bindings.associate { it }.toMutableMap())
 }
 
 fun env(vararg bindings: Pair<String, Exp>) =
@@ -32,22 +33,30 @@ fun env(vararg bindings: Pair<String, Exp>) =
 
 fun standardEnv() = env(
     "begin" to Proc { it.list.last() }, // used mainly for side effect of evaluating expressions
+
     "pi" to Num(Math.PI.toFloat()),
-    "*" to procNumericArity2("*", Int::times, Float::times),
-    "/" to procNumericArity2("/", Int::div, Float::div),
-    "+" to procNumericArity2("+", Int::plus, Float::plus),
-    "-" to procNumericArity2("-", Int::minus, Float::minus)
+
+    ">=" to procNumericArity2("gte", {l, r -> Bool(l >= r)}, {l, r -> Bool(l >= r)}),
+    ">" to procNumericArity2("gte", {l, r -> Bool(l > r)}, {l, r -> Bool(l > r)}),
+    "<=" to procNumericArity2("gte", {l, r -> Bool(l <= r)}, {l, r -> Bool(l <= r)}),
+    "<" to procNumericArity2("gte", {l, r -> Bool(l < r)}, {l, r -> Bool(l < r)}),
+
+    "*" to procNumericArity2("*", {l, r -> Num(l.times(r))}, {l, r -> Num(l.times(r))}),
+    "/" to procNumericArity2("/", {l, r -> Num(l.div(r))}, {l, r -> Num(l.div(r))}),
+    "+" to procNumericArity2("+", {l, r -> Num(l.plus(r))}, {l, r -> Num(l.plus(r))}),
+    "-" to procNumericArity2("-", {l, r -> Num(l.minus(r))}, {l, r -> Num(l.minus(r))})
+
 )
 
-private inline fun procNumericArity2(
+private inline fun <Res: Exp> procNumericArity2(
     name: String,
-    crossinline intImpl: (Int, Int) -> Int,
-    crossinline floatImpl: (Float, Float) -> Float
+    crossinline intImpl: (Int, Int) -> Res,
+    crossinline floatImpl: (Float, Float) -> Res
 ) = procArity2<Num, Num>(name) { lhs, rhs ->
     when {
-        lhs.num is Int && rhs.num is Int -> Num(intImpl(lhs.num, rhs.num))
-        lhs.num is Float && rhs.num is Float -> Num(floatImpl(lhs.num, rhs.num))
-        else -> evalErr("unexpected operands for *: ${lhs.pp()}, ${rhs.pp()}")
+        lhs.num is Int && rhs.num is Int -> intImpl(lhs.num, rhs.num)
+        lhs.num is Float && rhs.num is Float -> floatImpl(lhs.num, rhs.num)
+        else -> evalErr("incompatible operands for *: ${lhs.pp()}, ${rhs.pp()}")
     }
 }
 
