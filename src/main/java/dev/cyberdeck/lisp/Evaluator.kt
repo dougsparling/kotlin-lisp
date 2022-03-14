@@ -10,7 +10,7 @@ fun eval(x: Exp, env: Environment = env()): Exp {
         x is Num -> x
         x is Bool -> x
         x is Proc -> x
-        x is L && x.size == 0 -> x
+        x == Nil -> x
 
         // resolve from definition
         x is Symbol -> {
