@@ -35,6 +35,7 @@ fun standardEnv() = env(
     "begin" to Proc { it.list.last() }, // used mainly for side effect of evaluating expressions
 
     "pi" to Num(Math.PI.toFloat()),
+    "nil" to Nil,
 
     ">=" to procNumericArity2("gte", {l, r -> Bool(l >= r)}, {l, r -> Bool(l >= r)}),
     ">" to procNumericArity2("gte", {l, r -> Bool(l > r)}, {l, r -> Bool(l > r)}),
@@ -44,8 +45,10 @@ fun standardEnv() = env(
     "*" to procNumericArity2("*", {l, r -> Num(l.times(r))}, {l, r -> Num(l.times(r))}),
     "/" to procNumericArity2("/", {l, r -> Num(l.div(r))}, {l, r -> Num(l.div(r))}),
     "+" to procNumericArity2("+", {l, r -> Num(l.plus(r))}, {l, r -> Num(l.plus(r))}),
-    "-" to procNumericArity2("-", {l, r -> Num(l.minus(r))}, {l, r -> Num(l.minus(r))})
+    "-" to procNumericArity2("-", {l, r -> Num(l.minus(r))}, {l, r -> Num(l.minus(r))}),
 
+    "println" to Proc { args -> println(args.pp(parens = false)); Nil },
+    "print" to Proc { args -> print(args.pp(parens = false)); Nil }
 )
 
 private inline fun <Res: Exp> procNumericArity2(

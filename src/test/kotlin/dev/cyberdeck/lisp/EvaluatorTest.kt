@@ -77,7 +77,6 @@ class EvaluatorTest: StringSpec({
             // definition unchanged
             env[Symbol(symbol)].shouldBe(Num(1))
 
-            // expression wasn't evaluated (TODO is this desireable?)
             recorder.wasCalled().shouldBeFalse()
         }
     }

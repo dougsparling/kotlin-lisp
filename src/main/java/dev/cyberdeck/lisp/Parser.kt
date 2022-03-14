@@ -17,6 +17,7 @@ class SyntaxErr(msg: String) : RuntimeException(msg)
 
 sealed class Exp //: Value
 sealed class Atom : Exp()
+class Proc(val proc: (L) -> Exp) : Exp()
 data class Symbol(val sym: String) : Atom()
 data class Num(val num: Number) : Atom()
 data class Bool(val bool: Boolean) : Atom()
@@ -25,10 +26,9 @@ data class L(val list: List<Exp>) : Exp() {
     val size = list.size
 }
 
-fun listExp(vararg stuff: Exp) = L(stuff.toList())
+val Nil = L(emptyList())
 
-// TODO: built-in env type, maybe it should be above Exp?
-class Proc(val proc: (L) -> Exp) : Exp()
+fun listExp(vararg stuff: Exp) = L(stuff.toList())
 
 fun parse(str: String): List<String> {
     return str.replace("(", " ( ").replace(")", " ) ").split(' ').filter { it.isNotBlank() }
@@ -62,10 +62,14 @@ private fun atom(token: String) = when(token) {
     else -> token.toIntOrNull()?.let { Num(it) } ?: token.toFloatOrNull()?.let { Num(it) } ?: Symbol(token)
 }
 
-fun Exp.pp(): String = when (this) {
-    is L -> "(${list.joinToString(separator = " ", transform = Exp::pp)})"
+fun Exp.pp(parens: Boolean = true): String = when (this) {
+    is L -> when {
+        this.size == 0 -> "nil"
+        parens -> "(${list.joinToString(separator = " ", transform = Exp::pp)})"
+        else -> list.joinToString(separator = " ", transform = Exp::pp)
+    }
     is Num -> num.toString()
     is Bool -> bool.toString()
-    is Symbol -> ":$sym"
+    is Symbol -> sym
     is Proc -> "Proc"
 }

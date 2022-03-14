@@ -10,6 +10,7 @@ fun eval(x: Exp, env: Environment = env()): Exp {
         x is Num -> x
         x is Bool -> x
         x is Proc -> x
+        x is L && x.size == 0 -> x
 
         // resolve from definition
         x is Symbol -> {
@@ -27,7 +28,10 @@ fun eval(x: Exp, env: Environment = env()): Exp {
         }
 
         // (quote (exp))
-        x is L && x.size == 2 && x[0] == Symbol("quote") -> x[1]
+        x is L && x[0] == Symbol("quote") -> {
+            if(x.size != 2) evalErr("quote can only be applied to list, but was ${x.pp()}")
+            x[1]
+        }
 
         // (define x (exp))
         x is L && x.size == 3 && x[0] == Symbol("define") -> {
@@ -50,7 +54,7 @@ fun eval(x: Exp, env: Environment = env()): Exp {
                 if(args.size != paramList.size) evalErr("lambda of arity ${args.size} invoked with ${paramList.size} arguments")
 
                 // this is where the magic happens: bind the parameters passed to the lambda
-                // at the call site to the symbols
+                // at the call site to the arguments named by the given symbols
                 val binding = env.newInner(*params.zip(args.list).toTypedArray())
                 eval(body, binding)
             }
@@ -66,7 +70,8 @@ fun eval(x: Exp, env: Environment = env()): Exp {
 
         // proc call
         x is L && x.size > 0 -> {
-            val proc = eval(x.list.first(), env) as? Proc ?: evalErr("expected proc")
+            val first = eval(x[0], env)
+            val proc = first as? Proc ?: evalErr("expected ${x[0].pp()} to be proc, but was ${first.pp()}")
             val args = L(x.list.drop(1).map { eval(it, env) })
             proc.proc(args)
         }

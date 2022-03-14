@@ -6,12 +6,14 @@ fun main(vararg arg: String) {
     while (true) {
         print("> ")
         val line = reader.readLine()
-        if(line.equals("quit")) return
+        if(line.equals("quit") || line.equals("exit")) return
         val parsed = parse(line)
         try {
             val exp = readFromTokens(parsed)
             val result = eval(exp, env)
-            println(result.pp())
+            if(result != Nil) {
+                println(result.pp())
+            }
         } catch (e: SyntaxErr) {
             println("syntax error: ${e.message}")
             if(env["debug"]?.let { it is Bool && it.bool } == true) {
