@@ -28,6 +28,10 @@ class Environment(
 
     fun newInner(vararg bindings: Pair<Symbol, Exp>) =
         Environment(outer = this, dict = bindings.associate { it }.toMutableMap())
+
+    fun bindArgs(arg: List<String>) = apply { set("argv", L(arg.map(::LString))) }
+
+    fun pp() = dict.map { "${it.key.sym}:${it.value.pp(trunc = true)}" }.joinToString()
 }
 
 fun env(vararg bindings: Pair<String, Exp>) =
@@ -42,6 +46,13 @@ fun standardEnv() = env(
     "nil" to Nil,
     "head" to procArity1<L>("head") { it.list.first() }, // car is a silly name
     "tail" to procArity1<L>("tail") { L(it.list.drop(1)) }, // car is a silly name
+    "cons" to procArity2<Exp, L>("cons") { l, r -> L(listOf(l) + r.list) },
+
+    "atoi" to procArity1<LString>("atoi") { Num(it.str.toInt()) },
+
+    "eq" to procArity2<Exp, Exp>("eq") { l, r -> Bool(l == r) },
+    "and" to procArity2<Bool, Bool>("and") { l, r -> Bool(l.bool && r.bool) },
+    "or" to procArity2<Bool, Bool>("or") { l, r -> Bool(l.bool || r.bool) },
 
     ">=" to procNumericArity2("gte", { l, r -> Bool(l >= r) }, { l, r -> Bool(l >= r) }),
     ">" to procNumericArity2("gte", { l, r -> Bool(l > r) }, { l, r -> Bool(l > r) }),
@@ -88,9 +99,9 @@ private inline fun <reified Exp1 : Exp> procArity1(
     impl(it[0] as Exp1)
 }
 
-private inline fun <reified Exp1 : Exp, reified Rxp2 : Exp> procArity2(
+private inline fun <reified Exp1 : Exp, reified Exp2 : Exp> procArity2(
     name: String,
-    crossinline impl: (Exp1, Rxp2) -> Exp
+    crossinline impl: (Exp1, Exp2) -> Exp
 ) = Proc {
     if (it.size != 2) {
         evalErr("$name expects 2 arguments, got ${it.pp()}")
@@ -100,9 +111,9 @@ private inline fun <reified Exp1 : Exp, reified Rxp2 : Exp> procArity2(
         evalErr("$name expects first argument of type ${Exp1::class.java.simpleName} but was ${it[0].pp()}")
     }
 
-    if (it[1] !is Rxp2) {
-        evalErr("$name expects second argument of type ${Rxp2::class.java.simpleName} but was ${it[1].pp()}")
+    if (it[1] !is Exp2) {
+        evalErr("$name expects second argument of type ${Exp2::class.java.simpleName} but was ${it[1].pp()}")
     }
 
-    impl(it[0] as Exp1, it[1] as Rxp2)
+    impl(it[0] as Exp1, it[1] as Exp2)
 }

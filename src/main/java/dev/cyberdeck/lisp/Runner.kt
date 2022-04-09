@@ -10,7 +10,8 @@ fun main(vararg arg: String) {
     }
 
     val prog = File(arg[0]).readLines(charset("UTF-8")).joinToString(separator = " ")
-    runWithEnv(standardEnv(), prog)
+    val env = standardEnv().bindArgs(arg.drop(1)).newInner()
+    runWithEnv(env, prog)
 }
 
 internal fun runWithEnv(env: Environment, prog: String) {

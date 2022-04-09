@@ -57,11 +57,18 @@ private fun atom(token: String) = when (token) {
     }
 }
 
-fun Exp.pp(parens: Boolean = true): String = when (this) {
-    is L -> when {
-        this.size == 0 -> "nil"
-        parens -> "(${list.joinToString(separator = " ", transform = Exp::pp)})"
-        else -> list.joinToString(separator = " ", transform = Exp::pp)
+fun Exp.pp(parens: Boolean = true, trunc: Boolean = false): String = when (this) {
+    is L -> {
+        val itemsStr = if(trunc && size > 3) {
+            list.take(3).joinToString(separator = " ", transform = {it.pp(trunc = true)}) + " ..."
+        } else {
+            list.joinToString(separator = " ", transform = Exp::pp)
+        }
+        when {
+            this == Nil -> "nil"
+            parens -> "($itemsStr)"
+            else -> itemsStr
+        }
     }
     is Num -> num.toString()
     is Bool -> bool.toString()

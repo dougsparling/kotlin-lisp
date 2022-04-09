@@ -31,4 +31,10 @@ class IntegrationTest : StringSpec({
             it.shouldBe(L(listOf(Symbol("from"), Symbol("the"), Symbol("evaluator"))))
         }
     }
+
+    "cons creates a new list" {
+        run("(begin (cons 1 (quote (2 3))))").shouldBeSuccess {
+            it.shouldBe(L(listOf(Num(1), Num(2), Num(3))))
+        }
+    }
 })

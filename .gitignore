@@ -22,3 +22,6 @@ gradle-app.setting
 
 # IntelliJ stuff
 .idea
+
+# local experiments and files that must not see the light of day
+scratch

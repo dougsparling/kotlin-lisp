@@ -1,9 +1,8 @@
 package dev.cyberdeck.lisp
 
-fun main(vararg arg: String) {
+fun main(vararg args: String) {
     val reader = System.`in`.bufferedReader()
-    val env = standardEnv()
-    env["argv"] = L(arg.map(::LString))
+    val env = standardEnv().bindArgs(args.toList())
     while (true) {
         print("> ")
         val line = reader.readLine()
