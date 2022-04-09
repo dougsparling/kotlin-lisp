@@ -1,5 +1,7 @@
 package dev.cyberdeck.lisp
 
+import java.io.File
+
 class Environment(
     private val dict: MutableMap<Symbol, Exp> = mutableMapOf(),
     private val outer: Environment? = null
@@ -35,7 +37,11 @@ fun standardEnv() = env(
     "begin" to Proc { it.list.last() }, // used mainly for side effect of evaluating expressions
 
     "pi" to Num(Math.PI.toFloat()),
+
+    // lists
     "nil" to Nil,
+    "head" to procArity1<L>("head") { it.list.first() }, // car is a silly name
+    "tail" to procArity1<L>("tail") { L(it.list.drop(1)) }, // car is a silly name
 
     ">=" to procNumericArity2("gte", { l, r -> Bool(l >= r) }, { l, r -> Bool(l >= r) }),
     ">" to procNumericArity2("gte", { l, r -> Bool(l > r) }, { l, r -> Bool(l > r) }),
@@ -48,7 +54,11 @@ fun standardEnv() = env(
     "-" to procNumericArity2("-", { l, r -> Num(l.minus(r)) }, { l, r -> Num(l.minus(r)) }),
 
     "println" to Proc { args -> println(args.pp(parens = false)); Nil },
-    "print" to Proc { args -> print(args.pp(parens = false)); Nil }
+    "print" to Proc { args -> print(args.pp(parens = false)); Nil },
+
+    "readfile" to procArity1<LString>("readfile") { filename ->
+        L(File(filename.str).readLines().map(::LString))
+    }
 )
 
 private inline fun <Res : Exp> procNumericArity2(
@@ -63,21 +73,36 @@ private inline fun <Res : Exp> procNumericArity2(
     }
 }
 
-private inline fun <reified LhsExp : Exp, reified RhsExp : Exp> procArity2(
+private inline fun <reified Exp1 : Exp> procArity1(
     name: String,
-    crossinline impl: (LhsExp, RhsExp) -> Exp
+    crossinline impl: (Exp1) -> Exp
+) = Proc {
+    if (it.size != 1) {
+        evalErr("$name expects 1 argument, got ${it.pp()}")
+    }
+
+    if (it[0] !is Exp1) {
+        evalErr("$name expects first argument of type ${Exp1::class.java.simpleName} but was ${it[0].pp()}")
+    }
+
+    impl(it[0] as Exp1)
+}
+
+private inline fun <reified Exp1 : Exp, reified Rxp2 : Exp> procArity2(
+    name: String,
+    crossinline impl: (Exp1, Rxp2) -> Exp
 ) = Proc {
     if (it.size != 2) {
         evalErr("$name expects 2 arguments, got ${it.pp()}")
     }
 
-    if (it[0] !is LhsExp) {
-        evalErr("$name expects first argument of type ${LhsExp::class.java.simpleName} but was ${it[0].pp()}")
+    if (it[0] !is Exp1) {
+        evalErr("$name expects first argument of type ${Exp1::class.java.simpleName} but was ${it[0].pp()}")
     }
 
-    if (it[1] !is RhsExp) {
-        evalErr("$name expects second argument of type ${RhsExp::class.java.simpleName} but was ${it[1].pp()}")
+    if (it[1] !is Rxp2) {
+        evalErr("$name expects second argument of type ${Rxp2::class.java.simpleName} but was ${it[1].pp()}")
     }
 
-    impl(it[0] as LhsExp, it[1] as RhsExp)
+    impl(it[0] as Exp1, it[1] as Rxp2)
 }

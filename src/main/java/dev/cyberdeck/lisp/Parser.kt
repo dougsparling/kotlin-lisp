@@ -4,10 +4,12 @@ class SyntaxErr(msg: String) : RuntimeException(msg)
 
 sealed class Exp
 sealed class Atom : Exp()
-class Proc(val proc: (L) -> Exp) : Exp()
+sealed class Literal : Atom()
+class Proc(val proc: (L) -> Exp) : Literal()
 data class Symbol(val sym: String) : Atom()
-data class Num(val num: Number) : Atom()
-data class Bool(val bool: Boolean) : Atom()
+data class Num(val num: Number) : Literal()
+data class Bool(val bool: Boolean) : Literal()
+data class LString(val str: String) : Literal()
 data class L(val list: List<Exp>) : Exp() {
     operator fun get(idx: Int): Exp = list[idx]
     val size = list.size
@@ -46,7 +48,13 @@ private fun syntaxError(msg: String): Nothing = throw SyntaxErr(msg)
 private fun atom(token: String) = when (token) {
     "true" -> Bool(true)
     "false" -> Bool(false)
-    else -> token.toIntOrNull()?.let { Num(it) } ?: token.toFloatOrNull()?.let { Num(it) } ?: Symbol(token)
+    else -> {
+        if(token.startsWith('"') && token.endsWith('"')) {
+            LString(token.substring(1, token.length - 1))
+        } else {
+            token.toIntOrNull()?.let { Num(it) } ?: token.toFloatOrNull()?.let { Num(it) } ?: Symbol(token)
+        }
+    }
 }
 
 fun Exp.pp(parens: Boolean = true): String = when (this) {
@@ -58,5 +66,6 @@ fun Exp.pp(parens: Boolean = true): String = when (this) {
     is Num -> num.toString()
     is Bool -> bool.toString()
     is Symbol -> sym
+    is LString -> "\"$str\""
     is Proc -> "Proc"
 }

@@ -16,6 +16,7 @@ import io.kotest.property.exhaustive.exhaustive
 import io.kotest.property.exhaustive.merge
 
 class ParserTest: StringSpec({
+    val strings = listOf("\"hello\"", "\"hello world\"", "\"\"").exhaustive()
     val symbols = listOf("abc", "x", "x1", " a", " b").exhaustive()
     val atoms = symbols.merge(listOf("-1", "1", "1.0", "-1.0").exhaustive())
     val lists = Exhaustive.cartesian(atoms, atoms) { a, b -> listOf(a, b) }
@@ -73,6 +74,12 @@ class ParserTest: StringSpec({
     "readFromTokens returns boolean" {
         checkAll<Boolean> { b ->
             readFromTokens(listOf(b.toString())).shouldBe(Bool(b))
+        }
+    }
+
+    "readFromTokens returns string" {
+        checkAll(strings) { str ->
+            readFromTokens(listOf(str)).shouldBe(LString(str.substring(1, str.length - 1)))
         }
     }
 

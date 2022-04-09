@@ -6,10 +6,7 @@ fun evalErr(msg: String): Nothing = throw RuntimeErr(msg)
 
 fun eval(x: Exp, env: Environment = env()): Exp {
     return when {
-        // literal values
-        x is Num -> x
-        x is Bool -> x
-        x is Proc -> x
+        x is Literal -> x
         x == Nil -> x
 
         // resolve from definition
