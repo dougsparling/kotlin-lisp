@@ -13,6 +13,9 @@ repositories {
 
 application {
     mainClass.set("dev.cyberdeck.lisp.RunnerKt")
+
+    // lisp loves recursion, and so we'll need a large stack to process even modest amounts data
+    applicationDefaultJvmArgs += "-Xss512M"
 }
 
 tasks.withType<Test>().configureEach {

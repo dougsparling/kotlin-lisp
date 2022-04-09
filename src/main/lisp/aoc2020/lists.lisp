@@ -1,10 +1,10 @@
 (begin
-    (define map (lambda (in mapper)
-        (if (eq in nil)
+    (define map (lambda (list mapper)
+        (if (eq list nil)
             nil
             (cons
-                (mapper (head in))
-                (map (tail in) mapper)))))
+                (mapper (head list))
+                (map (tail list) mapper)))))
 
     (define reduce (lambda (list reducer)
         (if (eq list nil)
@@ -13,6 +13,12 @@
                 (head list)
                 (reducer (head list) (reduce (tail list) reducer))))))
 
+    (define filter (lambda (list predicate)
+        (if (eq list nil)
+            nil
+            (if (predicate (head list))
+                (cons (head list) (filter (tail list) predicate))
+                (filter (tail list) predicate)))))
 
     (define sum (lambda (nums) (reduce nums +)))
     (define product (lambda (nums) (reduce nums *)))

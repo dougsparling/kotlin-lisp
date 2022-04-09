@@ -33,4 +33,5 @@
 
     (define result2 (findTripleSum 2020 input))
 
-    (println "part-two:" (product result2)))
+    (println "part-two:" (product result2))
+)

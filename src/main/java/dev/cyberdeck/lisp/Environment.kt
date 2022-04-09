@@ -40,16 +40,15 @@ class Environment(
 
     fun bindArgv(arg: List<String>) = apply { set("argv", L(arg.map(::LString))) }
 
-    fun pp() = dict.map { "env=${it.key.sym}:${it.value.pp(trunc = true)}" }.joinToString()
+    fun pp() = "env={"+ dict.map { "${it.key.sym}:${it.value.pp(trunc = true)}" }.joinToString() + "}"
 
 }
 
 fun env(vararg bindings: Pair<String, Exp>) = standardEnv().withBindings(*bindings)
 
 fun standardEnv(root: File = Paths.get(".").toFile()) = Environment(loader = filesystemLoader(root)).withBindings(
-    "begin" to Proc { it.list.last() }, // used mainly for side effect of evaluating expressions
-
-    "pi" to Num(Math.PI.toFloat()),
+    // used mainly for side effect of evaluating expressions
+    "begin" to Proc { it.list.last() },
 
     // lists
     "nil" to Nil,
@@ -57,29 +56,35 @@ fun standardEnv(root: File = Paths.get(".").toFile()) = Environment(loader = fil
     "tail" to procArity1<L>("tail") { L(it.list.drop(1)) }, // car is a silly name
     "cons" to procArity2<Exp, L>("cons") { l, r -> L(listOf(l) + r.list) },
 
+    // strings
     "atoi" to procArity1<LString>("atoi") { Num(it.str.toInt()) },
-    "split" to procArity2<LString, LString>("split") { s, delim -> L(s.str.split(delim.str).map(::LString)) },
+    "splitp" to procArity2<LString, LString>("splitp") { s, delim -> L(s.str.split(Regex(delim.str)).map(::LString)) },
+    "chars" to procArity1<LString>("chars") { s -> L(s.str.map { LString("$it") }) },
+    "charAt" to procArity2<LString, Num>("charAt") { s, idx -> LString(""+s.str[idx.num.toInt()]) },
 
+    // boolean logic
     "eq" to procArity2<Exp, Exp>("eq") { l, r -> Bool(l == r) },
     "and" to procArity2<Bool, Bool>("and") { l, r -> Bool(l.bool && r.bool) },
     "or" to procArity2<Bool, Bool>("or") { l, r -> Bool(l.bool || r.bool) },
+    "not" to procArity1<Bool>("or") { Bool(!it.bool) },
 
+    // mathematical operators
     ">=" to procNumericArity2("gte", { l, r -> Bool(l >= r) }, { l, r -> Bool(l >= r) }),
     ">" to procNumericArity2("gte", { l, r -> Bool(l > r) }, { l, r -> Bool(l > r) }),
     "<=" to procNumericArity2("gte", { l, r -> Bool(l <= r) }, { l, r -> Bool(l <= r) }),
     "<" to procNumericArity2("gte", { l, r -> Bool(l < r) }, { l, r -> Bool(l < r) }),
-
     "*" to procNumericArity2("*", { l, r -> Num(l.times(r)) }, { l, r -> Num(l.times(r)) }),
     "/" to procNumericArity2("/", { l, r -> Num(l.div(r)) }, { l, r -> Num(l.div(r)) }),
     "+" to procNumericArity2("+", { l, r -> Num(l.plus(r)) }, { l, r -> Num(l.plus(r)) }),
     "-" to procNumericArity2("-", { l, r -> Num(l.minus(r)) }, { l, r -> Num(l.minus(r)) }),
 
+    // constants
+    "pi" to Num(Math.PI.toFloat()),
+
+    // I/O
     "println" to Proc { args -> println(args.pp(parens = false)); Nil },
     "print" to Proc { args -> print(args.pp(parens = false)); Nil },
-
-    "readfile" to procArity1<LString>("readfile") { filename ->
-        L(File(filename.str).readLines().map(::LString))
-    }
+    "readfile" to procArity1<LString>("readfile") { L(File(it.str).readLines().map(::LString)) }
 )
 
 fun filesystemLoader(requireRoot: File): Loader = { file: String ->
