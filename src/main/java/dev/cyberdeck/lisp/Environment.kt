@@ -1,10 +1,15 @@
 package dev.cyberdeck.lisp
 
 import java.io.File
+import java.io.FileNotFoundException
+import java.nio.file.Paths
+
+typealias Loader = (String) -> Exp
 
 class Environment(
+    val loader: Loader = { str: String -> outer?.loader?.invoke(str) ?: evalErr("no loader") },
     private val dict: MutableMap<Symbol, Exp> = mutableMapOf(),
-    private val outer: Environment? = null
+    private val outer: Environment? = null,
 ) {
     operator fun get(symbol: Symbol): Exp? = dict[symbol] ?: outer?.get(symbol)
 
@@ -29,15 +34,19 @@ class Environment(
     fun newInner(vararg bindings: Pair<Symbol, Exp>) =
         Environment(outer = this, dict = bindings.associate { it }.toMutableMap())
 
-    fun bindArgs(arg: List<String>) = apply { set("argv", L(arg.map(::LString))) }
+    fun withBindings(vararg bindings: Pair<String, Exp>) = apply {
+        bindings.forEach { (sym, exp) -> set(sym, exp) }
+    }
+
+    fun bindArgv(arg: List<String>) = apply { set("argv", L(arg.map(::LString))) }
 
     fun pp() = dict.map { "${it.key.sym}:${it.value.pp(trunc = true)}" }.joinToString()
+
 }
 
-fun env(vararg bindings: Pair<String, Exp>) =
-    Environment(bindings.associate { Symbol(it.first) to it.second }.toMutableMap())
+fun env(vararg bindings: Pair<String, Exp>) = standardEnv().withBindings(*bindings)
 
-fun standardEnv() = env(
+fun standardEnv(root: File = Paths.get(".").toFile()) = Environment(loader = filesystemLoader(root)).withBindings(
     "begin" to Proc { it.list.last() }, // used mainly for side effect of evaluating expressions
 
     "pi" to Num(Math.PI.toFloat()),
@@ -71,6 +80,15 @@ fun standardEnv() = env(
         L(File(filename.str).readLines().map(::LString))
     }
 )
+
+fun filesystemLoader(requireRoot: File): Loader = { file: String ->
+    try {
+        val sanitized = File(requireRoot, file).readLines(charset("UTF-8")).joinToString(separator = " ")
+        readFromTokens(parse(sanitized))
+    } catch (e: FileNotFoundException) {
+        evalErr("failed to load $file (root: $requireRoot)")
+    }
+}
 
 private inline fun <Res : Exp> procNumericArity2(
     name: String,

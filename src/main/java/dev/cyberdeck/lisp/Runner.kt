@@ -9,23 +9,21 @@ fun main(vararg arg: String) {
         exitProcess(1)
     }
 
-    val prog = File(arg[0]).readLines(charset("UTF-8")).joinToString(separator = " ")
-    val env = standardEnv().bindArgs(arg.drop(1)).newInner()
-    runWithEnv(env, prog)
-}
-
-internal fun runWithEnv(env: Environment, prog: String) {
-    val parsed = parse(prog)
+    val file = File(arg[0])
+    val env = standardEnv(file.parentFile).bindArgv(arg.drop(1)).newInner()
     try {
-        val exp = readFromTokens(parsed)
-        val result = eval(exp, env)
-        if (result != Nil) {
-            println(result.pp())
-        }
+        runWithEnv(env, env.loader(file.name))
     } catch (e: SyntaxErr) {
         println("syntax error: ${e.message}")
-        if (env["debug"]?.let { it is Bool && it.bool } == true) {
-            println("tokens: $parsed")
+        exitProcess(1)
+    }
+}
+
+internal fun runWithEnv(env: Environment, prog: Exp) {
+    try {
+        val result = eval(prog, env)
+        if (result != Nil) {
+            println(result.pp())
         }
     } catch (e: RuntimeErr) {
         println("error: ${e.message}")

@@ -11,7 +11,7 @@ fun eval(x: Exp, env: Environment = env()): Exp {
 
         // resolve from definition
         x is Symbol -> {
-            env[x] ?: evalErr("undefined: ${x.pp()} (${env.pp()}")
+            env[x] ?: evalErr("undefined: '${x.pp()}' (${env.pp()}")
         }
 
         // (if x (conseq) (alt))
@@ -28,6 +28,23 @@ fun eval(x: Exp, env: Environment = env()): Exp {
         x is L && x[0] == Symbol("quote") -> {
             if (x.size != 2) evalErr("quote can only be applied to list, but was ${x.pp()}")
             x[1]
+        }
+
+        // (require filename)
+        x is L && x.size == 2 && x[0] == Symbol("require") -> {
+            val (_, file) = x.list
+            file as? LString ?: evalErr("require needs filename but was given ${file.pp()}")
+
+            val exp = try {
+                env.loader(file.str)
+            } catch (e: SyntaxErr) {
+                evalErr("syntax error in required file ${file.str}: ${e.message}")
+            }
+            try {
+                eval(exp, env)
+            } catch (e: RuntimeErr) {
+                evalErr("runtime error in required file ${file.str}: ${e.message}")
+            }
         }
 
         // (define x (exp))
@@ -66,7 +83,7 @@ fun eval(x: Exp, env: Environment = env()): Exp {
             eval(exp, env).also { env.overwrite(sym, it) }
         }
 
-        // proc call
+        // procedure call
         x is L && x.size > 0 -> {
             val first = eval(x[0], env)
             val proc = first as? Proc ?: evalErr("expected ${x[0].pp()} to be proc, but was ${first.pp()}")

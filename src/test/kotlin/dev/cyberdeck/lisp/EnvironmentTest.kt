@@ -98,4 +98,22 @@ class EnvironmentTest : ShouldSpec({
             }
         }
     }
+
+    context("require") {
+        should("define into current scope") {
+            val reqTest = listExp(Symbol("require"), LString("test"))
+            val env = Environment(loader = {
+                listExp(Symbol("define"), Symbol("a"), Num(1))
+            })
+            eval(reqTest, env = env)
+            env["a"].shouldBe(Num(1))
+        }
+
+        should("propagate syntax errors") {
+            shouldThrow<RuntimeErr> {
+                val reqTest = listExp(Symbol("require"), LString("test"))
+                eval(reqTest, env = Environment(loader = {throw SyntaxErr("oops")}))
+            }
+        }
+    }
 })
