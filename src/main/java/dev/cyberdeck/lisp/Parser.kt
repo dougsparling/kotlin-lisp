@@ -19,8 +19,25 @@ val Nil = L(emptyList())
 
 fun listExp(vararg stuff: Exp) = L(stuff.toList())
 
-fun parse(str: String): List<String> {
-    return str.replace("(", " ( ").replace(")", " ) ").split(' ').filter { it.isNotBlank() }
+fun tokenize(str: String): List<String> {
+    val trimmed = str.trimStart()
+    return if (trimmed.isEmpty()) {
+        listOf()
+    } else if(trimmed.startsWith('"')) {
+        val next = trimmed.indexOf('"', 1)
+        if(next == -1) syntaxError("unbalanced string starting at ${trimmed.take(10)}...")
+        val token = trimmed.substring(0, next + 1)
+        listOf(token) + tokenize(trimmed.substring(next + 1))
+    } else if (trimmed.startsWith("(") || trimmed.startsWith(")")) {
+        listOf(trimmed.substring(0, 1)) + tokenize(trimmed.substring(1))
+    } else {
+        val endOfToken = trimmed.indexOfAny(charArrayOf(' ', ')', '('), 1)
+        if (endOfToken == -1) {
+            // EOF
+            return listOf(trimmed)
+        }
+        listOf(trimmed.substring(0, endOfToken)) + tokenize(trimmed.substring(endOfToken))
+    }
 }
 
 fun readFromTokens(tokens: List<String>): Exp = readFromTokens(ArrayDeque(tokens))

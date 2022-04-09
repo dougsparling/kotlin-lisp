@@ -16,14 +16,14 @@ import io.kotest.property.exhaustive.exhaustive
 import io.kotest.property.exhaustive.merge
 
 class ParserTest: StringSpec({
-    val strings = listOf("\"hello\"", "\"hello world\"", "\"\"").exhaustive()
+    val strings = listOf("\"hello\"", "\"hello world\"", "\"\"", "\")(\"", "\"()\"").exhaustive()
     val symbols = listOf("abc", "x", "x1", " a", " b").exhaustive()
     val atoms = symbols.merge(listOf("-1", "1", "1.0", "-1.0").exhaustive())
     val lists = Exhaustive.cartesian(atoms, atoms) { a, b -> listOf(a, b) }
 
     "parse token" {
         checkAll(symbols) { s ->
-            val result = parse(s)
+            val result = tokenize(s)
             result.forAll {
                 it.shouldNotContain(" ")
                 it.shouldNotBeEmpty()
@@ -35,7 +35,7 @@ class ParserTest: StringSpec({
 
     "parse with parens" {
         checkAll(symbols) { s ->
-            val result = parse("($s)")
+            val result = tokenize("($s)")
             result.forAll {
                 it.shouldNotContain(" ")
                 it.shouldNotBeEmpty()
@@ -48,9 +48,27 @@ class ParserTest: StringSpec({
     "parse with unbalanced parens" {
         checkAll(symbols) { s ->
             shouldThrow<SyntaxErr> {
-                readFromTokens(parse("($s $s ($s ($s $s))")) // no closing paren
+                readFromTokens(tokenize("($s $s ($s ($s $s))")) // no closing paren
             }
         }
+    }
+
+    "parse strings" {
+        val exp = readFromTokens(tokenize("\"well this is silly\""))
+        exp.shouldBe(LString("well this is silly"))
+    }
+
+    "parse lists of strings" {
+        checkAll(strings) { str ->
+            val bare = str.substring(1, str.length - 1)
+            val exp = readFromTokens(tokenize("($str ($str $str))"))
+            exp.shouldBe(listExp(LString(bare), listExp(LString(bare), LString(bare))))
+        }
+    }
+
+    "parse complex expressions" {
+        val tokens = tokenize("(begin (define r 10.0) (* pi (* r r)))")
+        tokens.shouldBe(listOf("(", "begin", "(", "define", "r", "10.0", ")", "(", "*", "pi", "(", "*", "r", "r", ")", ")", ")"))
     }
 
     "readFromTokens fails if empty" {

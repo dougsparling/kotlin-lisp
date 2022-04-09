@@ -40,7 +40,7 @@ class Environment(
 
     fun bindArgv(arg: List<String>) = apply { set("argv", L(arg.map(::LString))) }
 
-    fun pp() = dict.map { "${it.key.sym}:${it.value.pp(trunc = true)}" }.joinToString()
+    fun pp() = dict.map { "env=${it.key.sym}:${it.value.pp(trunc = true)}" }.joinToString()
 
 }
 
@@ -58,6 +58,7 @@ fun standardEnv(root: File = Paths.get(".").toFile()) = Environment(loader = fil
     "cons" to procArity2<Exp, L>("cons") { l, r -> L(listOf(l) + r.list) },
 
     "atoi" to procArity1<LString>("atoi") { Num(it.str.toInt()) },
+    "split" to procArity2<LString, LString>("split") { s, delim -> L(s.str.split(delim.str).map(::LString)) },
 
     "eq" to procArity2<Exp, Exp>("eq") { l, r -> Bool(l == r) },
     "and" to procArity2<Bool, Bool>("and") { l, r -> Bool(l.bool && r.bool) },
@@ -84,7 +85,7 @@ fun standardEnv(root: File = Paths.get(".").toFile()) = Environment(loader = fil
 fun filesystemLoader(requireRoot: File): Loader = { file: String ->
     try {
         val sanitized = File(requireRoot, file).readLines(charset("UTF-8")).joinToString(separator = " ")
-        readFromTokens(parse(sanitized))
+        readFromTokens(tokenize(sanitized))
     } catch (e: FileNotFoundException) {
         evalErr("failed to load $file (root: $requireRoot)")
     }

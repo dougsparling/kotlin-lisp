@@ -8,7 +8,7 @@ fun main(vararg args: String) {
         val line = reader.readLine()
         if (line == null || line.equals("quit") || line.equals("exit")) return
         try {
-            runWithEnv(env, readFromTokens(parse(line)))
+            runWithEnv(env, readFromTokens(tokenize(line)))
         } catch (e: SyntaxErr) {
             println("syntax error: ${e.message}")
         }

@@ -7,7 +7,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 fun run(prog: String) = Result.runCatching {
-    val tokens = parse(prog)
+    val tokens = tokenize(prog)
     val ast = readFromTokens(tokens)
     val env = standardEnv()
     eval(ast, env)

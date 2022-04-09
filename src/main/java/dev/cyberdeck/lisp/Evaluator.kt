@@ -11,7 +11,7 @@ fun eval(x: Exp, env: Environment = env()): Exp {
 
         // resolve from definition
         x is Symbol -> {
-            env[x] ?: evalErr("undefined: '${x.pp()}' (${env.pp()}")
+            env[x] ?: evalErr("undefined: '${x.pp()}' (${env.pp()})")
         }
 
         // (if x (conseq) (alt))
