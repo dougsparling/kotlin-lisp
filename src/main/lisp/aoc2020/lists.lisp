@@ -20,6 +20,9 @@
                 (cons (head list) (filter (tail list) predicate))
                 (filter (tail list) predicate)))))
 
+    (define drop (lambda (list n)
+        (if (<= n 0) list (drop (tail list) (- n 1)))))
+
     (define sum (lambda (nums) (reduce nums +)))
     (define product (lambda (nums) (reduce nums *)))
 

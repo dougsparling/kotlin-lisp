@@ -7,7 +7,7 @@ import java.nio.file.Paths
 typealias Loader = (String) -> Exp
 
 class Environment(
-    val loader: Loader = { str: String -> outer?.loader?.invoke(str) ?: evalErr("no loader") },
+    val loader: Loader = { str -> outer?.loader?.invoke(str) ?: evalErr("no loader") },
     private val dict: MutableMap<Symbol, Exp> = mutableMapOf(),
     private val outer: Environment? = null,
 ) {
@@ -57,10 +57,11 @@ fun standardEnv(root: File = Paths.get(".").toFile()) = Environment(loader = fil
     "cons" to procArity2<Exp, L>("cons") { l, r -> L(listOf(l) + r.list) },
 
     // strings
-    "atoi" to procArity1<LString>("atoi") { Num(it.str.toInt()) },
+    "atoi" to procArity1<LString>("atoi") { Num(it.str.toLong()) },
     "splitp" to procArity2<LString, LString>("splitp") { s, delim -> L(s.str.split(Regex(delim.str)).map(::LString)) },
     "chars" to procArity1<LString>("chars") { s -> L(s.str.map { LString("$it") }) },
     "charAt" to procArity2<LString, Num>("charAt") { s, idx -> LString(""+s.str[idx.num.toInt()]) },
+    "length" to procArity1<LString>("chars") { s -> Num(s.str.length) },
 
     // boolean logic
     "eq" to procArity2<Exp, Exp>("eq") { l, r -> Bool(l == r) },
@@ -77,6 +78,7 @@ fun standardEnv(root: File = Paths.get(".").toFile()) = Environment(loader = fil
     "/" to procNumericArity2("/", { l, r -> Num(l.div(r)) }, { l, r -> Num(l.div(r)) }),
     "+" to procNumericArity2("+", { l, r -> Num(l.plus(r)) }, { l, r -> Num(l.plus(r)) }),
     "-" to procNumericArity2("-", { l, r -> Num(l.minus(r)) }, { l, r -> Num(l.minus(r)) }),
+    "%" to procNumericArity2("-", { l, r -> Num(l.mod(r)) }, { l, r -> Num(l.mod(r)) }),
 
     // constants
     "pi" to Num(Math.PI.toFloat()),
@@ -98,11 +100,11 @@ fun filesystemLoader(requireRoot: File): Loader = { file: String ->
 
 private inline fun <Res : Exp> procNumericArity2(
     name: String,
-    crossinline intImpl: (Int, Int) -> Res,
+    crossinline longImpl: (Long, Long) -> Res,
     crossinline floatImpl: (Float, Float) -> Res
 ) = procArity2<Num, Num>(name) { lhs, rhs ->
     when {
-        lhs.num is Int && rhs.num is Int -> intImpl(lhs.num, rhs.num)
+        lhs.num is Long && rhs.num is Long -> longImpl(lhs.num, rhs.num)
         lhs.num is Float && rhs.num is Float -> floatImpl(lhs.num, rhs.num)
         else -> evalErr("incompatible operands for *: ${lhs.pp()}, ${rhs.pp()}")
     }

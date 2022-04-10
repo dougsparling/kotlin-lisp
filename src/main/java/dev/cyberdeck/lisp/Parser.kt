@@ -7,7 +7,11 @@ sealed class Atom : Exp()
 sealed class Literal : Atom()
 class Proc(val proc: (L) -> Exp) : Literal()
 data class Symbol(val sym: String) : Atom()
-data class Num(val num: Number) : Literal()
+data class Num internal constructor(val num: Number) : Literal() {
+    constructor(long: Long): this(long as Number)
+    constructor(float: Float): this(float as Number)
+    constructor(int: Int): this(int.toLong() as Number)
+}
 data class Bool(val bool: Boolean) : Literal()
 data class LString(val str: String) : Literal()
 data class L(val list: List<Exp>) : Exp() {
@@ -69,7 +73,7 @@ private fun atom(token: String) = when (token) {
         if(token.startsWith('"') && token.endsWith('"')) {
             LString(token.substring(1, token.length - 1))
         } else {
-            token.toIntOrNull()?.let { Num(it) } ?: token.toFloatOrNull()?.let { Num(it) } ?: Symbol(token)
+            token.toLongOrNull()?.let { Num(it) } ?: token.toFloatOrNull()?.let { Num(it) } ?: Symbol(token)
         }
     }
 }

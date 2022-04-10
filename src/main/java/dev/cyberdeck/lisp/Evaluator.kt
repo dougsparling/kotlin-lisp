@@ -30,6 +30,9 @@ fun eval(x: Exp, env: Environment = env()): Exp {
             x[1]
         }
 
+        // (-- some comment)
+        x is L && x[0] == Symbol("--") -> Nil
+
         // (require filename)
         x is L && x.size == 2 && x[0] == Symbol("require") -> {
             val (_, file) = x.list
@@ -66,7 +69,7 @@ fun eval(x: Exp, env: Environment = env()): Exp {
             }
 
             Proc { args ->
-                if (args.size != paramList.size) evalErr("lambda of arity ${args.size} invoked with ${paramList.size} arguments")
+                if (args.size != paramList.size) evalErr("lambda of arity ${paramList.size} invoked with ${args.size} arguments ($args)")
 
                 // this is where the magic happens: bind the parameters passed to the lambda
                 // at the call site to the arguments named by the given symbols

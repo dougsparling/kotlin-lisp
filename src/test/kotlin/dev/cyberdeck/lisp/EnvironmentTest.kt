@@ -26,28 +26,28 @@ class EnvironmentTest : ShouldSpec({
     }
 
     context("std environment") {
-        should("multiply ints") {
-            checkAll<Int, Int> { l, r ->
+        should("multiply longs") {
+            checkAll<Long, Long> { l, r ->
                 eval(listExp(Symbol("*"), Num(l), Num(r)), stdEnv).shouldBe(Num(l * r))
             }
         }
 
-        should("divide ints") {
-            checkAll<Int, Int> { l, r ->
-                if (r != 0) {
+        should("divide longs") {
+            checkAll<Long, Long> { l, r ->
+                if (r != 0L) {
                     eval(listExp(Symbol("/"), Num(l), Num(r)), stdEnv).shouldBe(Num(l / r))
                 }
             }
         }
 
-        should("add ints") {
-            checkAll<Int, Int> { l, r ->
+        should("add longs") {
+            checkAll<Long, Long> { l, r ->
                 eval(listExp(Symbol("+"), Num(l), Num(r)), stdEnv).shouldBe(Num(l + r))
             }
         }
 
-        should("subtract ints") {
-            checkAll<Int, Int> { l, r ->
+        should("subtract longs") {
+            checkAll<Long, Long> { l, r ->
                 eval(listExp(Symbol("-"), Num(l), Num(r)), stdEnv).shouldBe(Num(l - r))
             }
         }
