@@ -97,6 +97,106 @@ class EnvironmentTest : ShouldSpec({
                 }
             }
         }
+
+        context("sorted") {
+            should("use natural long order") {
+                val res = eval(listExp(Symbol("sorted"), listExp(Symbol("quote"), listExp(Num(3), Num(2), Num(1)))))
+                res.shouldBe(listExp(Num(1), Num(2), Num(3)))
+            }
+
+            should("use natural float order") {
+                val res =
+                    eval(listExp(Symbol("sorted"), listExp(Symbol("quote"), listExp(Num(3.0f), Num(2.0f), Num(1.0f)))))
+                res.shouldBe(listExp(Num(1.0f), Num(2.0f), Num(3.0f)))
+            }
+
+            should("use natural string order") {
+                val res = eval(
+                    listExp(
+                        Symbol("sorted"),
+                        listExp(Symbol("quote"), listExp(LString("c"), LString("b"), LString("a")))
+                    )
+                )
+                res.shouldBe(listExp(LString("a"), LString("b"), LString("c")))
+            }
+
+            should("compare lists by element") {
+                val res = eval(
+                    listExp(
+                        Symbol("sorted"),
+                        listExp(
+                            Symbol("quote"),
+                            listExp(
+                                listExp(Num(2), LString("b")),
+                                listExp(Num(2), LString("a")),
+                                listExp(Num(1), LString("d")),
+                                listExp(Num(1), LString("c"))
+                            )
+                        )
+                    )
+                )
+
+                res.shouldBe(
+                    listExp(
+                        listExp(Num(1), LString("c")),
+                        listExp(Num(1), LString("d")),
+                        listExp(Num(2), LString("a")),
+                        listExp(Num(2), LString("b"))
+                    )
+                )
+            }
+
+            should("fail to compare mixed types") {
+                shouldThrow<RuntimeErr> {
+                    eval(
+                        listExp(
+                            Symbol("sorted"),
+                            listExp(
+                                Symbol("quote"),
+                                listExp(
+                                    listExp(Num(2), Num(1)),
+                                    listExp(LString("a"), LString("b"))
+                                )
+                            )
+                        )
+                    )
+                }
+            }
+
+            should("fail to compare mismatched lists") {
+                shouldThrow<RuntimeErr> {
+                    eval(
+                        listExp(
+                            Symbol("sorted"),
+                            listExp(
+                                Symbol("quote"),
+                                listExp(
+                                    listExp(Num(2), Num(1)),
+                                    listExp(Num(1)),
+                                )
+                            )
+                        )
+                    )
+                }
+            }
+
+            should("fail to compare incomparables") {
+                shouldThrow<RuntimeErr> {
+                    eval(
+                        listExp(
+                            Symbol("sorted"),
+                            listExp(
+                                Symbol("quote"),
+                                listExp(
+                                    Symbol("a"),
+                                    Symbol("b")
+                                )
+                            )
+                        )
+                    )
+                }
+            }
+        }
     }
 
     context("require") {
@@ -112,7 +212,7 @@ class EnvironmentTest : ShouldSpec({
         should("propagate syntax errors") {
             shouldThrow<RuntimeErr> {
                 val reqTest = listExp(Symbol("require"), LString("test"))
-                eval(reqTest, env = Environment(loader = {throw SyntaxErr("oops")}))
+                eval(reqTest, env = Environment(loader = { throw SyntaxErr("oops") }))
             }
         }
     }
