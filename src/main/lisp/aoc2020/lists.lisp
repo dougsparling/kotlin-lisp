@@ -1,4 +1,13 @@
 (begin
+    (-- invokes a callback for each element in the list. Returns nil and ignores
+        whatever is returned from the action)
+    (define foreach (lambda (list action) (begin
+        (if (eq list nil)
+            nil
+            (begin
+                (action (head list))
+                (foreach (tail list) action))))))
+
     (-- map transforms all elements of the given list using the supplied mapping proc)
     (define map (lambda (list mapper)
         (if (eq list nil)
@@ -23,6 +32,14 @@
             (if (predicate (head list))
                 (cons (head list) (filter (tail list) predicate))
                 (filter (tail list) predicate)))))
+
+    (-- find returns the first element that satisfies the predicate, or nil if none did)
+    (define find (lambda (list predicate)
+        (if (eq list nil)
+            nil
+            (if (predicate (head list))
+                (head list)
+                (find (tail list) predicate)))))
 
     (-- drop returns a list with the first n elements removed. If n exceeds the length of the
         list, returns nil)

@@ -55,13 +55,17 @@ fun standardEnv(root: File = Paths.get(".").toFile()) = Environment(loader = fil
     "head" to procArity1<L>("head") { it.list.first() }, // car is a silly name
     "tail" to procArity1<L>("tail") { L(it.list.drop(1)) }, // car is a silly name
     "cons" to procArity2<Exp, L>("cons") { l, r -> L(listOf(l) + r.list) },
+    "list" to Proc { it },
+    "sorted" to procArity1<L>("sorted") { l -> L(l.list.sortedWith(naturalComparator)) },
 
     // strings
     "atoi" to procArity1<LString>("atoi") { Num(it.str.toLong()) },
     "splitp" to procArity2<LString, LString>("splitp") { s, delim -> L(s.str.split(Regex(delim.str)).map(::LString)) },
     "chars" to procArity1<LString>("chars") { s -> L(s.str.map { LString("$it") }) },
     "charAt" to procArity2<LString, Num>("charAt") { s, idx -> LString(""+s.str[idx.num.toInt()]) },
-    "length" to procArity1<LString>("chars") { s -> Num(s.str.length) },
+    "length" to procArity1<LString>("length") { s -> Num(s.str.length) },
+    "substr" to procArity3<LString, Num, Num>("substr") { s, i, j -> LString(s.str.substring(i.num.toInt(), j.num.toInt())) },
+    "matches" to procArity2<LString, LString>("matches") { s, r -> Bool(r.str.toRegex().matches(s.str)) },
 
     // boolean logic
     "eq" to procArity2<Exp, Exp>("eq") { l, r -> Bool(l == r) },
@@ -106,7 +110,7 @@ private inline fun <Res : Exp> procNumericArity2(
     when {
         lhs.num is Long && rhs.num is Long -> longImpl(lhs.num, rhs.num)
         lhs.num is Float && rhs.num is Float -> floatImpl(lhs.num, rhs.num)
-        else -> evalErr("incompatible operands for *: ${lhs.pp()}, ${rhs.pp()}")
+        else -> evalErr("incompatible operands for $name: ${lhs.pp()}, ${rhs.pp()}")
     }
 }
 
@@ -142,4 +146,28 @@ private inline fun <reified Exp1 : Exp, reified Exp2 : Exp> procArity2(
     }
 
     impl(it[0] as Exp1, it[1] as Exp2)
+}
+
+
+private inline fun <reified Exp1 : Exp, reified Exp2 : Exp, reified Exp3 : Exp> procArity3(
+    name: String,
+    crossinline impl: (Exp1, Exp2, Exp3) -> Exp
+) = Proc {
+    if (it.size != 3) {
+        evalErr("$name expects 2 arguments, got ${it.pp()}")
+    }
+
+    if (it[0] !is Exp1) {
+        evalErr("$name expects first argument of type ${Exp1::class.java.simpleName} but was ${it[0].pp()}")
+    }
+
+    if (it[1] !is Exp2) {
+        evalErr("$name expects second argument of type ${Exp2::class.java.simpleName} but was ${it[1].pp()}")
+    }
+
+    if (it[2] !is Exp3) {
+        evalErr("$name expects third argument of type ${Exp3::class.java.simpleName} but was ${it[2].pp()}")
+    }
+
+    impl(it[0] as Exp1, it[1] as Exp2, it[2] as Exp3)
 }

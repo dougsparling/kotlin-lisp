@@ -78,6 +78,18 @@ private fun atom(token: String) = when (token) {
     }
 }
 
+val naturalComparator = object : Comparator<Exp> {
+    override fun compare(o1: Exp, o2: Exp): Int = when {
+        o1 is Num && o2 is Num && o1.num is Long && o2.num is Long -> o1.num.compareTo(o2.num)
+        o1 is Num && o2 is Num && o1.num is Float && o2.num is Float -> o1.num.compareTo(o2.num)
+        o1 is LString && o2 is LString -> o1.str.compareTo(o2.str)
+        o1 is L && o2 is L && o1.size == o2.size -> o1.list.zip(o2.list).fold(0) { cmp, (l, r) ->
+            if(cmp == 0) compare(l, r) else cmp
+        }
+        else -> evalErr("incomparable elements in list: ${o1.pp()}, ${o2.pp()}")
+    }
+}
+
 fun Exp.pp(parens: Boolean = true, trunc: Boolean = false): String = when (this) {
     is L -> {
         val itemsStr = if(trunc && size > 3) {
