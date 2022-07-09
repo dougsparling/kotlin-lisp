@@ -57,6 +57,10 @@
                 true
                 (contains needle (tail haystack))))))
 
+    (-- returns a list of numbers between 'from' and 'to', inclusive)
+    (define range (lambda (from to)
+        (if (> from to) nil (cons from (range (+ from 1) to)))))
+
     (-- returns the size of the given list, or 0 if the list is empty)
     (define size (lambda (list)
         (if (eq list nil)

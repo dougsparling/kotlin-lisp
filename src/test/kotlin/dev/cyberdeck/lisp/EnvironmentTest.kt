@@ -98,6 +98,16 @@ class EnvironmentTest : ShouldSpec({
             }
         }
 
+        should("convert base 10 strings to longs") {
+            val res = eval(listExp(Symbol("atoi"), LString("42")))
+            res.shouldBe(Num(42))
+        }
+
+        should("convert base 16 strings to longs") {
+            val res = eval(listExp(Symbol("atoi"), LString("FF"), Num(16)))
+            res.shouldBe(Num(255))
+        }
+
         context("sorted") {
             should("use natural long order") {
                 val res = eval(listExp(Symbol("sorted"), listExp(Symbol("quote"), listExp(Num(3), Num(2), Num(1)))))

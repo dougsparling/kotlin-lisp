@@ -16,6 +16,7 @@ data class Bool(val bool: Boolean) : Literal()
 data class LString(val str: String) : Literal()
 data class L(val list: List<Exp>) : Exp() {
     operator fun get(idx: Int): Exp = list[idx]
+    fun getOrElse(idx: Int, default: Exp) = if(list.size > idx) list[idx] else default
     val size = list.size
 }
 

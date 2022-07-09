@@ -59,13 +59,14 @@ fun standardEnv(root: File = Paths.get(".").toFile()) = Environment(loader = fil
     "sorted" to procArity1<L>("sorted") { l -> L(l.list.sortedWith(naturalComparator)) },
 
     // strings
-    "atoi" to procArity1<LString>("atoi") { Num(it.str.toLong()) },
+    "atoi" to Proc { args -> Num((args[0] as LString).str.toLong((args.getOrElse(1, Num(10)) as Num).num.toInt())) },
     "splitp" to procArity2<LString, LString>("splitp") { s, delim -> L(s.str.split(Regex(delim.str)).map(::LString)) },
     "chars" to procArity1<LString>("chars") { s -> L(s.str.map { LString("$it") }) },
     "charAt" to procArity2<LString, Num>("charAt") { s, idx -> LString(""+s.str[idx.num.toInt()]) },
     "length" to procArity1<LString>("length") { s -> Num(s.str.length) },
     "substr" to procArity3<LString, Num, Num>("substr") { s, i, j -> LString(s.str.substring(i.num.toInt(), j.num.toInt())) },
     "matches" to procArity2<LString, LString>("matches") { s, r -> Bool(r.str.toRegex().matches(s.str)) },
+    "replace" to procArity3<LString, LString, LString>("replace") { s, old, new -> LString(s.str.replace(old.str, new.str)) },
 
     // boolean logic
     "eq" to procArity2<Exp, Exp>("eq") { l, r -> Bool(l == r) },
